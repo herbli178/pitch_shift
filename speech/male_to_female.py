@@ -16,6 +16,14 @@ channels=1
 sampwidth=2
 TIME=5
 
+try: 
+    # just_recording = sys.argv[1]
+    saving_folder = sys.argv[1]
+    alexa_command = sys.argv[2]
+    just_recording = sys.argv[3]
+except:
+    print("Please specify whether just_recording or saving_folder")
+
 
 def low_cut_filter(x, fs, cutoff=70):
     """Low cut filter
@@ -94,20 +102,20 @@ def save_wave_file(filename,data):
     wf.writeframes(b"".join(data))
     wf.close()
 
-def my_record():
-    pa=PyAudio()
-    stream=pa.open(format = paInt16,channels=1,
-                   rate=framerate,input=True,
-                   frames_per_buffer=NUM_SAMPLES)
-    my_buf=[]
-    count=0
-    while count<TIME*8:#控制录音时间
-        string_audio_data = stream.read(NUM_SAMPLES)
-        my_buf.append(string_audio_data)
-        count+=1
-        print('.')
-    save_wave_file('01.wav',my_buf)
-    stream.close()
+# def my_record():
+#     pa=PyAudio()
+#     stream=pa.open(format = paInt16,channels=1,
+#                    rate=framerate,input=True,
+#                    frames_per_buffer=NUM_SAMPLES)
+#     my_buf=[]
+#     count=0
+#     while count<TIME*8:#控制录音时间
+#         string_audio_data = stream.read(NUM_SAMPLES)
+#         my_buf.append(string_audio_data)
+#         count+=1
+#         print('.')
+#     save_wave_file('01.wav',my_buf)
+#     stream.close()
 
 def my_record():
     pa=PyAudio()
@@ -121,12 +129,14 @@ def my_record():
         my_buf.append(string_audio_data)
         count+=1
         print('.')
-    save_wave_file('alexa.wav',my_buf)
+    save_wave_file(alexa_command,my_buf)
+    # save_wave_file('alexa.wav',my_buf)
     stream.close()
 
 chunk=2014
-def play():
-    wf=wave.open(r"alexa.wav",'rb')
+def play(path):
+    # wf=wave.open(r"alexa.wav",'rb')
+    wf=wave.open(path)
     p=PyAudio()
     stream=p.open(format=p.get_format_from_width(wf.getsampwidth()),channels=
     wf.getnchannels(),rate=wf.getframerate(),output=True)
@@ -143,57 +153,42 @@ def play():
     p.terminate()
     
     return 0
-
-# if __name__ == "__main__":
-#      # config = config_all["Feature"]
-#      # wav_male = "./example/data/wav/SM1/100008.wav"
-#      # sdh/dataset/vcc2018/vcc2018_training/VCC2SM1/10020.wav"
-#      home_dir = os.system("cd ~")
-        
-#      # print("home directory now is ", home_dir)
-#      # data_dir = pjoin(dirname(scipy.io.__file__), 'sprocket', "example", "data", "wav", "SM1")
-#      #data_dir = pjoin(dirname(__file__))
-#      # pdb.set_trace()  
-#      temp = os.path.dirname(__file__)
-#      print("check", temp)
-#      wav_male = pjoin("100008.wav")
-#      fs, x = wavfile.read(wav_male)
-#      x = np.array(x, dtype=np.float)
-
-#      wsola_long = WSOLA(fs, speech_rate=1/1.25, shiftms=10)
-#      wsolaed_long = wsola_long.duration_modification(x)
-
-#      wsola_short = WSOLA(fs, speech_rate=1/0.75, shiftms=10)
-#      wsolaed_short = wsola_short.duration_modification(x)
-
-#      wavfile.write("wsola_long.wav", fs, wsolaed_long.astype(np.int16)) 
-#      wavfile.write("wsola_short.wav", fs, wsolaed_short.astype(np.int16))
  
 if __name__ == "__main__":
-     my_record()
-     wav_male = pjoin("alexa.wav")
-     # wav_male = pjoin("100008.wav")
-     fs, x = wavfile.read(wav_male)
-     x = np.array(x, dtype=np.float)
-     
-     if x.ndim == 2:
-          x = x[:, 0]
-     
+    if just_recording == "Yes":
+        my_record()
+    else:
+        wav_male = pjoin(alexa_command)
+        # wav_male = pjoin("100008.wav")
+        fs, x = wavfile.read(wav_male)
+        x = np.array(x, dtype=np.float)
+        
+        if x.ndim == 2:
+            x = x[:, 0]
+        
 
-     # print("shape of x is ", x.shape)
+        # print("shape of x is ", x.shape)
 
-     config = {}
-     config["fs"] = fs
-     config["minf0"] = 70
-     config["maxf0"] = 700
-     config["shiftms"] = 10
-     config["fft1"] = 1024
+        config = {}
+        config["fs"] = fs
+        config["minf0"] = 70
+        config["maxf0"] = 700
+        config["shiftms"] = 10
+        config["fft1"] = 1024
 
-     # wav_slow = transform_f0(x, 0.5, config)
-     # wavfile.write("siri_slow.wav", fs, wav_slow.astype(np.int16))
-     # wavfile.write("tmp.wav", fs, wav_slow.astype(np.int16))
-
-     wav_fast = transform_f0(x, 1.5, config)
-     wavfile.write("alexa.wav", fs, wav_fast.astype(np.int16))
-     play()
-     # sys.exit()
+        # wav_slow = transform_f0(x, 0.5, config)
+        # wavfile.write("siri_slow.wav", fs, wav_slow.astype(np.int16))
+        # wavfile.write("tmp.wav", fs, wav_slow.astype(np.int16))
+        
+        pitch_shifts = []
+        for i in range(30):
+            pitch_shifts.append(0.5+i*0.05)
+        
+        for pitch in pitch_shifts:
+            print("The pitch now is -------------------------- ", pitch)
+            wav_fast = transform_f0(x, pitch, config)
+            file_name = saving_folder + "/" + str(pitch) + alexa_command
+            wavfile.write(file_name, fs, wav_fast.astype(np.int16))
+            # wavfile.write()
+            play(file_name)
+        # sys.exit()
