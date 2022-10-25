@@ -196,4 +196,4 @@ if __name__ == "__main__":
      wav_fast = transform_f0(x, 1.5, config)
      wavfile.write("alexa.wav", fs, wav_fast.astype(np.int16))
      play()
-     sys.exit()
+     # sys.exit()
